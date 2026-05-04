@@ -1,0 +1,17 @@
+{
+  "name": "event-booking-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "language": "JavaScript",
+  "testing": "Jest",
+  "dependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
