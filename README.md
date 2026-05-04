@@ -46,3 +46,4 @@ Bookings (Protected):
 ### POST /events/:id/book: Book seats (protected; body: {seats}; extract user_id from JWT, check availability, update available_seats atomically with transaction).
 ### GET /bookings: List user's bookings (protected; filter by user_id from JWT).
 ### DELETE /bookings/:id: Cancel booking (protected; only for the user's own booking; restore seats).
+![Database Schema](./docs/db.png)
