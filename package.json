@@ -2,9 +2,12 @@
   "name": "event-booking-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js",
+    "dev": "nodemon server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +15,11 @@
   "language": "JavaScript",
   "testing": "Jest",
   "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "nodemon": "^3.1.14"
+  },
+  "devDependencies": {
+    "eslint": "^10.3.0"
   }
 }
