@@ -3,6 +3,10 @@ import { pool } from '../schema/db.js';
 export const createNewEvent = async (eventData, ownerId) => {
     const { title, description, date, total_seats } = eventData;
 
+    if (!Number.isInteger(total_seats) || total_seats <= 0) {
+        throw new Error('INVALID_TOTAL_SEATS');
+    }
+
     if (new Date(date) <= new Date()) {
         throw new Error('EVENT_DATE_PAST');
     }
@@ -64,6 +68,11 @@ export const updateEventDetails = async (eventId, ownerId, updateData) => {
    const description = updateData.description || currentEvent.rows[0].description;
    const date = updateData.date || currentEvent.rows[0].event_date;
    const total_seats = updateData.total_seats !== undefined ? updateData.total_seats : currentEvent.rows[0].total_seats;
+
+
+   if (!Number.isInteger(total_seats) || total_seats <= 0) {
+    throw new Error('INVALID_TOTAL_SEATS');
+}
 
    const countQuery = `SELECT COALESCE(SUM(seats_booked), 0) AS booked FROM bookings WHERE event_id = $1`;
    const countRes = await pool.query(countQuery, [eventId]);
