@@ -69,13 +69,14 @@ The server starts at http://localhost:3000.
 
  API Endpoints
 
- Authentication
+### Authentication
 
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/register` | Public | Register a new user. Body: `{ username, email, password }`. Returns `201` with JWT. |
 | `POST` | `/api/login` | Public | Authenticate user. Body: `{ email, password }`. Returns JWT or `401`. |
-Events
+
+### Events
 
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
