@@ -65,7 +65,7 @@ npm run dev
 # Production
 npm start
 
-The server starts at http://localhost:3000.
+The server starts at https://eventbookingapi.fly.dev.
 
  API Endpoints
 
