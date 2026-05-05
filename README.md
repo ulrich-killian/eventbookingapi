@@ -99,6 +99,6 @@ The server starts at http://localhost:3000.
 
 All protected routes require the header: Authorization: Bearer <token>
 
-🗄 Database Schema
+Database Schema
 See ![Database Schema](./docs/db.png) for the full entity-relationship diagram.
 
