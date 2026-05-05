@@ -1,15 +1,28 @@
 import { pool } from '../schema/db.js';
 
+const assertFutureEventDate = (value) => {
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+        throw new Error('INVALID_EVENT_DATE');
+    }
+
+    if (parsed <= new Date()) {
+        throw new Error('EVENT_DATE_PAST');
+    }
+    return parsed.toISOString();
+};
+
 export const createNewEvent = async (eventData, ownerId) => {
     const { title, description, date, total_seats } = eventData;
+
 
     if (!Number.isInteger(total_seats) || total_seats <= 0) {
         throw new Error('INVALID_TOTAL_SEATS');
     }
 
-    if (new Date(date) <= new Date()) {
-        throw new Error('EVENT_DATE_PAST');
-    }
+    const normalizedDate = assertFutureEventDate(date);
+
 
     const query = `
         INSERT INTO events (title, description, event_date, total_seats, available_seats, created_by)
@@ -17,7 +30,7 @@ export const createNewEvent = async (eventData, ownerId) => {
         RETURNING *;
     `;
 
-    const values = [title, description, date, total_seats, total_seats, ownerId];
+    const values = [title, description, normalizedDate, total_seats, total_seats, ownerId];
     const result = await pool.query(query, values);
     return result.rows[0];
 };
@@ -77,10 +90,13 @@ export const updateEventDetails = async (eventId, ownerId, updateData) => {
 
        const currentEvent = eventCheck.rows[0];
 
+       const date = updateData.date 
+           ? assertFutureEventDate(updateData.date) 
+           : currentEvent.event_date;
+
 
        const title = updateData.title || currentEvent.title;
        const description = updateData.description || currentEvent.description;
-       const date = updateData.date || currentEvent.event_date;
        const total_seats = updateData.total_seats !== undefined ? updateData.total_seats : currentEvent.total_seats;
 
 

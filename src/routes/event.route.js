@@ -80,6 +80,10 @@ router.put("/events/:id", authenticateToken, async (req, res) => {
         .status(409)
         .json({ error: "Cannot reduce total seats below current bookings." });
     }
+    if (error.message === 'INVALID_EVENT_DATE') {
+        return res.status(400).json({ error: "Please provide a valid date format." });
+    }
+    
     if (error.message === 'INVALID_TOTAL_SEATS') {
         return res.status(400).json({ error: "Total seats must be a positive integer." });
     }
@@ -102,6 +106,11 @@ router.post("/events", authenticateToken, async (req, res) => {
       event,
     });
   } catch (error) {
+
+    if (error.message === 'INVALID_EVENT_DATE') {
+        return res.status(400).json({ error: "Please provide a valid date format." });
+    }
+
     if (error.message === "EVENT_DATE_PAST") {
       return res
         .status(400)
