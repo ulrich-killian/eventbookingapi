@@ -44,3 +44,39 @@ export const listUserBookings = async (userId) => {
     const res = await pool.query(query, [userId]);
     return res.rows;
 };
+
+export const cancelBooking = async (bookingId, userId) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+
+        const bookingRes = await client.query(
+            'SELECT event_id, seats_booked FROM bookings WHERE id = $1 AND user_id = $2 FOR UPDATE',
+            [bookingId, userId]
+        );
+
+        if (bookingRes.rowCount === 0) {
+            throw new Error('BOOKING_NOT_FOUND_OR_UNAUTHORIZED');
+        }
+
+        const { event_id, seats_booked } = bookingRes.rows[0];
+
+
+        await client.query('DELETE FROM bookings WHERE id = $1', [bookingId]);
+
+ 
+        await client.query(
+            'UPDATE events SET available_seats = available_seats + $1 WHERE id = $2',
+            [seats_booked, event_id]
+        );
+
+        await client.query('COMMIT');
+        return { message: "Booking cancelled successfully" };
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+};
