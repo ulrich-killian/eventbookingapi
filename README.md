@@ -85,12 +85,13 @@ PUT        /api/events/:id    Owneronly        Update event. Cannot reduce seat 
 DELETE     /api/events/:id    Owneronly           Delete event. Blocked if active bookings exist.
 
 
-Bookings
+### Bookings
 
-Method      Endpoint                Auth                   Description
-POST    /api/events/:id/book     Required      Reserve seats. Body: { seats }. Atomic transaction; returns 409 if seats unavailable.
-GET      /api/bookings           Required          List the authenticated user's bookings.
-DELETE  /api/bookings/:id       Booking Owner         Cancel booking and restore seats to the event.
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/events/:id/book` | Required | Reserve seats. Body: `{ seats }`. Atomic transaction; returns `409` if seats are unavailable. |
+| `GET` | `/api/bookings` | Required | List the authenticated user's personal bookings. |
+| `DELETE` | `/api/bookings/:id` | Booking Owner | Cancel a booking and restore seats to the event atomically. |
 
 
 
