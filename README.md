@@ -65,7 +65,7 @@ npm run dev
 # Production
 npm start
 
-The server starts at https://eventbookingapi.fly.dev.
+The server starts at https://eventbookingapi-w0a3.onrender.com
 
  API Endpoints
 
