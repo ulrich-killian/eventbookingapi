@@ -10,8 +10,10 @@ router.post('/events/:id/book', authenticateToken, async (req, res) => {
         const booking = await createBooking(req.params.id, req.user.id, seats || 1);
         res.status(201).json({ message: "Booking successful", booking });
     } catch (err) {
-        const status = err.message === 'NOT_ENOUGH_SEATS' ? 409 : 500;
-        res.status(status).json({ error: err.message });
+        if (err.message === 'NOT_ENOUGH_SEATS') {
+            return res.status(409).json({ error: "Sorry, this event is fully booked." });
+        }
+        res.status(500).json({ error: "Booking failed" });
     }
 });
 
