@@ -1,49 +1,101 @@
-### Event Booking App API Documentation
+                                        Event Booking API
 
-this project consist of a Backend event planning and booking. Built using node js javascript, express, postgres db. i.e with three seperate services
+A high-concurrency backend for event planning and seat reservations, built with a focus on data integrity and concurrency control.
 
-   1) Core service: This service is responsible for performing the core operations of the app. It is built using express, postgres
-   2) bcryptjs: for password hashing and jsonwebtoken for JWT generation/validation.
-    Authentication service: As of now, authentication is handled by the core service. However, I am working on decoupling the authentication endpoints from the core service and making the auth service a standalone service.
-   3) Tokens expire (set with expiry in JWT.sign); input validation (e.g., email format, password strength); SQL injection prevention; error responses (e.g., 409 for insufficient seats, 403 for unauthorized access).
-   4) Performance and Edge Cases: Handles concurrent bookings without data loss; invalid/expired tokens rejected; future-date enforcement; no unauthorized access to user-specific data.
-   5) Protect routes with middleware: Apply to create/update events, all booking operations; public for reads and auth.
-   6) Add pagination for listing endpoints (e.g., ?limit=10&offset=0).
-   7) Handle date validation and timezone considerations with Node's Date object.
+                      Tech Stack
 
-   ### Requirements
+Layer                                     TechnologyRuntimeNode.
+Runtime                                         Node.js    
+Framework                                       Express.js
+Database                                  Postgres SQL (with pg driver)
+Auth                                     JWT (JSON Web Token) + Bcrypt.js
+Security                                     Express-Rate-Limit
 
-    Nodejs is a JavaScript runtime built on Chrome's V8 JavaScript engine.
-    PostgreSQL is a powerful relational db, open source object-relational database system with over 35 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance.
-    Express is a minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
 
-   ### Features
+                                     Architecture & Design
 
-    Authentication Service:
-        User registration: Registers a new user
-        User login: Logs in a registered user
-        Password change: Change password while logged in
-        Forgot password: Change password when user forgets
-        Email verification: Verify user via email
+Service Layer Pattern — Business logic is decoupled from routes into dedicated services, keeping complex rules (especially around seat management) isolated and testable.
 
-   ### Core Service:
-        Event: Create, Update, Read and Cancel events
-        Bookings: Create, Update, Read, Cancel bookings
+Concurrency Control — PostgreSQL Row-Level Locking (FOR UPDATE) is applied during booking and update flows to prevent race conditions and overbooking.
 
-   ### Getting Started
+Atomic Operations — Seat allocations and cancellations are wrapped in SQL transactions. If any step fails, the system rolls back to maintain a consistent state.
 
-   ### Core API Endpoints:
+Rate Limiting — API endpoints are protected against brute-force and DoS attacks.
+Input Validation — Strict enforcement of future-event dating, email format, password strength, and positive seat counts.
 
-### POST /register: Create a new user (body: {username, email, password}; validate uniqueness, hash password, return 201 with JWT token).
-### POST /login: Authenticate user (body: {email, password}; verify hash, return 200 with JWT token if valid, else 401).
-### GET /events: List events with date filtering (start/end query params using SQL BETWEEN).
-### GET /events/:id: Fetch event with booking summary (aggregate seats_booked for the event).
-### POST /events: Create event (protected; body: {title, description, date, total_seats}; validate future date using Node's Date object; set created_by to current user ID).
-### PUT /events/:id: Update event (protected; prevent reducing seats below booked; only allow owner to update).
+Getting Started
 
-Bookings (Protected):
+ Prerequisites
 
-### POST /events/:id/book: Book seats (protected; body: {seats}; extract user_id from JWT, check availability, update available_seats atomically with transaction).
-### GET /bookings: List user's bookings (protected; filter by user_id from JWT).
-### DELETE /bookings/:id: Cancel booking (protected; only for the user's own booking; restore seats).
-![Database Schema](./docs/db.png)
+Node.js v18+
+PostgreSQL v14+
+
+Installation
+
+# 1. Clone the repository
+git clone https://github.com/ulrich-killian/eventbookingapi
+cd event-booking-api
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment variables
+cp .env.example .env
+
+Environment Variables
+Create a .env file in the project root:
+
+DATABASE_URL=postgres://user:password@localhost:5432/eventbooking
+JWT_SECRET=your_strong_secret_key_here
+JWT_EXPIRY=7d
+PORT=3000
+NODE_ENV=development
+
+Database Setup
+
+# Run migrations
+npm run migrate
+
+
+Running the Server
+
+# Development (with auto-reload)
+npm run dev
+
+# Production
+npm start
+
+The server starts at http://localhost:3000.
+
+ API Endpoints
+
+ Authentication
+
+Method      Endpoint      Auth       Description
+POST      api/register   Public    Register a new user. Body: { username, email, password }. Returns 201 with JWT.
+POST       /api/login    Public    Authenticate user. Body: { email, password }. Returns JWT or 401.
+
+Events
+
+Method      Endpoint         Auth                   Description
+GET         /api/events     PublicList       events. Supports date filtering (?start=&end=) and pagination(?limit=10&offset=0).
+GET        /api/events/:id   Public            Fetch a single event with real-time booking summary.
+POST       /api/events       Required         Create event. Body: { title, description, date, total_seats }. Date must be in the future.
+PUT        /api/events/:id    Owneronly        Update event. Cannot reduce seat capacity below current bookings.
+DELETE     /api/events/:id    Owneronly           Delete event. Blocked if active bookings exist.
+
+
+Bookings
+
+Method      Endpoint                Auth                   Description
+POST    /api/events/:id/book     Required      Reserve seats. Body: { seats }. Atomic transaction; returns 409 if seats unavailable.
+GET      /api/bookings           Required          List the authenticated user's bookings.
+DELETE  /api/bookings/:id       Booking Owner         Cancel booking and restore seats to the event.
+
+
+
+All protected routes require the header: Authorization: Bearer <token>
+
+🗄 Database Schema
+See ![Database Schema](./docs/db.png) for the full entity-relationship diagram.
+

@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.middleware.js';
-import { createBooking, listUserBookings } from '../services/booking.service.js';
+import { createBooking, listUserBookings, cancelBooking } from '../services/booking.service.js';
 
 const router = express.Router();
 
@@ -23,6 +23,19 @@ router.get('/bookings', authenticateToken, async (req, res) => {
         res.json(bookings);
     } catch (err) {
         res.status(500).json({ error: "Failed to fetch bookings", err });
+    }
+});
+
+router.delete('/bookings/:id', authenticateToken, async (req, res) => {
+    try {
+        const result = await cancelBooking(req.params.id, req.user.id);
+        res.json(result);
+    } catch (err) {
+        if (err.message === 'BOOKING_NOT_FOUND_OR_UNAUTHORIZED') {
+            return res.status(403).json({ error: "Booking not found or you are not authorized to cancel it." });
+        }
+        console.error("Cancel Booking Error:", err);
+        res.status(500).json({ error: "Failed to cancel booking" });
     }
 });
 
