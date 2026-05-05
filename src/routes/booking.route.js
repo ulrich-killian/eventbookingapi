@@ -7,12 +7,20 @@ const router = express.Router();
 router.post('/events/:id/book', authenticateToken, async (req, res) => {
     try {
         const { seats } = req.body;
+
         const booking = await createBooking(req.params.id, req.user.id, seats || 1);
         res.status(201).json({ message: "Booking successful", booking });
     } catch (err) {
+
         if (err.message === 'NOT_ENOUGH_SEATS') {
             return res.status(409).json({ error: "Sorry, this event is fully booked." });
         }
+        
+        if (err.message === 'EVENT_NOT_FOUND') {
+            return res.status(404).json({ error: "Event not found." });
+        }
+
+        console.error("Booking Error:", err);
         res.status(500).json({ error: "Booking failed" });
     }
 });
