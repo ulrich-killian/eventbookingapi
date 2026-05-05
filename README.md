@@ -102,3 +102,5 @@ All protected routes require the header: Authorization: Bearer <token>
 Database Schema
 See ![Database Schema](./docs/db.png) for the full entity-relationship diagram.
 
+
+postgresql://postgres:wEwpFOWJbQ9BZFBg@db.gxcdzxuetliegtnqfoys.supabase.co:5432/postgres
