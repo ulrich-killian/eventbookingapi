@@ -2,12 +2,14 @@ import express from 'express';
 import { testConnection } from './src/schema/db.js';
 import { authenticateToken } from './src/middleware/auth.middleware.js';
 import authroute from './src/routes/auth.route.js'
+import eventroute from './src/routes/event.route.js'
 
 const app = express();
 const PORT = process.env.PORT || 3000
 
 app.use(express.json());
-app.use('/api/auth', authroute);
+app.use('/api', authroute);
+app.use('/api', eventroute)
 
 app.get('/', (req, res) => {
    res.send("Event booking api is running")
@@ -22,6 +24,8 @@ app.use((req, res) => {
 });
 
  testConnection();
+
+
 
  app.listen(PORT, () => {
    console.log(`app is running is on ${PORT}`)

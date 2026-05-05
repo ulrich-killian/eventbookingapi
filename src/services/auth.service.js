@@ -13,8 +13,22 @@ VALUES ($1, $2, $3)
 RETURNING id, username, email;
 `;
 const result = await pool.query(query, [username, email, passwordHash]);
-    return result.rows[0];
+const user = result.rows[0];
+
+    const token = jwt.sign(
+      {id: user.id},
+      process.env.JWT_SECRET,
+      {expiresIn: process.env.JWT_EXPIRES_IN || '24h'}
+    );
+
+    return {
+      message: "user signup was succeful",
+      token,
+      user
+    };
 };
+
+
 
 export const loginUser = async (email, password) => {
    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);

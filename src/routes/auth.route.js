@@ -3,14 +3,16 @@ import { signup, loginUser } from '../services/auth.service.js';
 
 const router = express.Router();
 
-router.post('/signup', async (req, res) => {
+router.post('/register', async (req, res) => {
     try {
         const { username, email, password } = req.body;
-        if (!username || !email || !password) return res.status(400).json({ error: "Missing fields" });
-        const newUser = await signup(username, email, password);
-        res.status(201).json(newUser);
+        const response = await signup(username, email, password);
+        if (!username || !email || !password)
+             return res.status(401).json({ error: "Missing fields" });
+        res.status(201).json(response);
     } catch (err) {
-        if (err.code === '23505') return res.status(409).json({ error: "Email already exists" });
+        if (err.code === '23505') 
+        return res.status(401).json({ error: "Email already exists" });
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
