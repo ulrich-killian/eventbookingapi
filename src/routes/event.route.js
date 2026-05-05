@@ -46,28 +46,20 @@ router.get("/events", async (req, res) => {
   }
 });
 
-router.delete("/events/:id", authenticateToken, async (req, res) => {
-  try {
-    await deleteEventSafely(req.params.id, req.user.id);
-
-    res.status(200).json({
-      message: "Event deleted successfully.",
-    });
-  } catch (error) {
-    console.error("DEBUG ERROR:", error);
-    if (error.message === "HAS_ACTIVE_BOOKINGS") {
-      return res.status(400).json({
-        error:
-          "Cannot delete event with active bookings. Please contact attendees or cancel bookings first.",
-      });
+router.delete('/events/:id', authenticateToken, async (req, res) => {
+    try {
+        await deleteEventSafely(req.params.id, req.user.id);
+        return res.status(200).json({ message: "Event deleted successfully" });
+    } catch (error) {
+        if (error.message === 'HAS_ACTIVE_BOOKINGS') {
+            return res.status(400).json({ error: "Cannot delete an event that has active bookings." });
+        }
+        if (error.message === 'NOT_OWNER_OR_NOT_FOUND') {
+            return res.status(403).json({ error: "Event not found or permission denied." });
+        }
+        console.error("Delete Error:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
     }
-    if (error.message === "NOT_OWNER_OR_NOT_FOUND") {
-      return res
-        .status(403)
-        .json({ error: "You are not authorized to delete this event." });
-    }
-    res.status(500).json({ error: "Server error during deletion." });
-  }
 });
 
 router.put("/events/:id", authenticateToken, async (req, res) => {
@@ -91,7 +83,7 @@ router.put("/events/:id", authenticateToken, async (req, res) => {
     if (error.message === 'INVALID_TOTAL_SEATS') {
         return res.status(400).json({ error: "Total seats must be a positive integer." });
     }
-    
+
     if (error.message === "NOT_OWNER_OR_NOT_FOUND") {
       return res
         .status(403)

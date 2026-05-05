@@ -61,69 +61,85 @@ export const getEventWithSummary = async (eventId) => {
 
 
 export const updateEventDetails = async (eventId, ownerId, updateData) => {
-   const currentEvent = await pool.query('SELECT * FROM events WHERE id = $1', [eventId]);
-   if (currentEvent.rowCount === 0) throw new Error('NOT_OWNER_OR_NOT_FOUND');
-
-   const title = updateData.title || currentEvent.rows[0].title;
-   const description = updateData.description || currentEvent.rows[0].description;
-   const date = updateData.date || currentEvent.rows[0].event_date;
-   const total_seats = updateData.total_seats !== undefined ? updateData.total_seats : currentEvent.rows[0].total_seats;
+   const client = await pool.connect();
+   try {
+       await client.query('BEGIN');
 
 
-   if (!Number.isInteger(total_seats) || total_seats <= 0) {
-    throw new Error('INVALID_TOTAL_SEATS');
-}
+       const eventCheck = await client.query(
+           'SELECT * FROM events WHERE id = $1 AND created_by = $2 FOR UPDATE', 
+           [eventId, ownerId]
+       );
+       
+       if (eventCheck.rowCount === 0) {
+           throw new Error('NOT_OWNER_OR_NOT_FOUND');
+       }
 
-   const countQuery = `SELECT COALESCE(SUM(seats_booked), 0) AS booked FROM bookings WHERE event_id = $1`;
-   const countRes = await pool.query(countQuery, [eventId]);
-   const currentlyBooked = parseInt(countRes.rows[0].booked);
+       const currentEvent = eventCheck.rows[0];
 
-   if (total_seats < currentlyBooked) {
-       throw new Error('CANNOT_REDUCE_BELOW_BOOKED');
+
+       const title = updateData.title || currentEvent.title;
+       const description = updateData.description || currentEvent.description;
+       const date = updateData.date || currentEvent.event_date;
+       const total_seats = updateData.total_seats !== undefined ? updateData.total_seats : currentEvent.total_seats;
+
+
+       if (!Number.isInteger(total_seats) || total_seats <= 0) {
+           throw new Error('INVALID_TOTAL_SEATS');
+       }
+
+
+       const countQuery = `SELECT COALESCE(SUM(seats_booked), 0) AS booked FROM bookings WHERE event_id = $1`;
+       const countRes = await client.query(countQuery, [eventId]);
+       const currentlyBooked = parseInt(countRes.rows[0].booked);
+
+       if (total_seats < currentlyBooked) {
+           throw new Error('CANNOT_REDUCE_BELOW_BOOKED');
+       }
+
+
+       const updateQuery = `
+           UPDATE events 
+           SET title = $1, description = $2, event_date = $3, 
+               total_seats = $4::integer, available_seats = ($4::integer - $5::integer)
+           WHERE id = $6 AND created_by = $7
+           RETURNING *;
+       `;
+
+       const values = [title, description, date, total_seats, currentlyBooked, eventId, ownerId];
+       const result = await client.query(updateQuery, values);
+       
+       await client.query('COMMIT');
+       return result.rows[0];
+
+   } catch (error) {
+       await client.query('ROLLBACK');
+       throw error;
+   } finally {
+       client.release();
    }
-
-
-   const updateQuery = `
-    UPDATE events 
-    SET title = $1, 
-        description = $2, 
-        event_date = $3, 
-        total_seats = $4::integer, 
-        available_seats = ($4::integer - $5::integer)
-    WHERE id = $6 AND created_by = $7
-    RETURNING *;
-`;
-
-   const values = [title, description, date, total_seats, currentlyBooked, eventId, ownerId];
-   const result = await pool.query(updateQuery, values);
-   
-   if (result.rowCount === 0) {
-       throw new Error('NOT_OWNER_OR_NOT_FOUND');
-   }
-
-   return result.rows[0];
 };
 
 export const deleteEventSafely = async (eventId, ownerId) => {
-   const bookingCheck = await pool.query(
-       'SELECT COUNT(*) FROM bookings WHERE event_id = $1',
-       [eventId]
-   );
 
-   const hasBookings = parseInt(bookingCheck.rows[0].count) > 0;
+    const deleteQuery = `
+    DELETE FROM events 
+    WHERE id = $1 
+    AND created_by = $2 
+    AND NOT EXISTS (SELECT 1 FROM bookings WHERE event_id = $1)
+    RETURNING id;
+`;
 
-   if (hasBookings) {
-       throw new Error('HAS_ACTIVE_BOOKINGS');
-   }
-
-   const result = await pool.query(
-       'DELETE FROM events WHERE id = $1 AND created_by = $2 RETURNING *',
-       [eventId, ownerId]
-   );
+   const result = await pool.query(deleteQuery, [eventId, ownerId]);
 
    if (result.rowCount === 0) {
-       throw new Error('NOT_OWNER_OR_NOT_FOUND');
-   }
+    const checkRes = await pool.query(
+        'SELECT (SELECT COUNT(*) FROM bookings WHERE event_id = $1) as booking_count FROM events WHERE id = $2',
+        [eventId, eventId]
+    );
 
-   return result.rows[0];
+    if (checkRes.rowCount === 0) throw new Error('NOT_OWNER_OR_NOT_FOUND');
+    if (parseInt(checkRes.rows[0].booking_count) > 0) throw new Error('HAS_ACTIVE_BOOKINGS');
+   }
+   return { message: "Event deleted successfully" };
 };
