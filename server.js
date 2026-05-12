@@ -5,12 +5,16 @@ import authroute from './src/routes/auth.route.js'
 import eventroute from './src/routes/event.route.js'
 import bookingroute from './src/routes/booking.route.js';
 import { globalLimiter } from './src/middleware/rateLimiter.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger.js';
+
 
 const app = express();
 const PORT = process.env.PORT || 3000
 
 app.use(express.json());
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', globalLimiter);
 app.use('/api', authroute);
 
