@@ -103,3 +103,4 @@ Database Schema
 See ![Database Schema](./docs/db.png) for the full entity-relationship diagram.
 
 
+Visit the swagger documentation https://eventbookingapi-w0a3.onrender.com/api-docs/

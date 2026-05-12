@@ -12,7 +12,7 @@ describe('Testing Your API With Jest and Supertest', () => {
       .post('/api/v1/booking')
       .set('Authorization', validToken)
       .send({
-        // Send your request body in here
+
       });
 
     bookingId = res.body.id;

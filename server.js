@@ -1,28 +1,44 @@
 import express from 'express';
 import { testConnection } from './src/schema/db.js';
 import { authenticateToken } from './src/middleware/auth.middleware.js';
-import authroute from './src/routes/auth.route.js'
-import eventroute from './src/routes/event.route.js'
+import authroute from './src/routes/auth.route.js';
+import eventroute from './src/routes/event.route.js';
 import bookingroute from './src/routes/booking.route.js';
 import { globalLimiter } from './src/middleware/rateLimiter.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Swagger docs - serve setup files first, then the UI
+app.use('/api-docs', swaggerUi.serve);
+app.get('/api-docs', swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.3/swagger-ui.min.css',
+  customJs: [
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.3/swagger-ui-bundle.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.3/swagger-ui-standalone-preset.min.js'
+  ]
+}));
+
+// Also serve the raw spec
+app.get('/api-docs-json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
 app.use('/api', globalLimiter);
 app.use('/api', authroute);
-
-app.use('/api', eventroute)
-app.use('/api', bookingroute)
-
+app.use('/api', eventroute);
+app.use('/api', bookingroute);
 
 app.get('/', (req, res) => {
-   res.send("Event booking api is running")
- });
+  res.send("Event booking api is running");
+});
 
- app.post('/api/bookings', authenticateToken, async (req, res) => {
+app.post('/api/bookings', authenticateToken, async (req, res) => {
   res.json({ message: `Booking created for user ${req.user.id}` });
 });
 
@@ -30,10 +46,8 @@ app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
- testConnection();
+testConnection();
 
-
-
- app.listen(PORT, () => {
-   console.log(`app is running is on ${PORT}`)
- });
+app.listen(PORT, () => {
+  console.log(`app is running on ${PORT}`);
+});
