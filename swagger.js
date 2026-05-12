@@ -10,7 +10,7 @@ const options = {
     },
     servers: [
       { url: 'http://localhost:3000', description: 'Development' },
-      { url: 'https://eventbookingapi.fly.dev', description: 'Production' }
+      { url: 'https://eventbookingapi-w0a3.onrender.com', description: 'Production' }
     ],
     components: {
       securitySchemes: {
