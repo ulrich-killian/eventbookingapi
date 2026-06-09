@@ -2,10 +2,15 @@ import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { pool } from '../schema/db.js'
 
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error("JWT_SECRET is required");
+}
+
+
 export  const signup = async (username, email, password) => {
    const salt = 10;
    const passwordHash = await bcrypt.hash(password, salt);
-
 
 const query = `
 INSERT INTO users (username, email, password_hash) 
@@ -17,7 +22,7 @@ const user = result.rows[0];
 
     const token = jwt.sign(
       {id: user.id},
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       {expiresIn: process.env.JWT_EXPIRES_IN || '24h'}
     );
 
@@ -42,7 +47,7 @@ export const loginUser = async (email, password) => {
    }
   return jwt.sign(
   { id: user.id },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
   );
 };

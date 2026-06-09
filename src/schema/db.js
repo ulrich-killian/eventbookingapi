@@ -14,8 +14,9 @@ async function testConnection() {
     const client = await pool.connect();
     client.release();
     console.log("postgres db connected successfully");
-  } catch (err) {
+   } catch (err) {
     console.error("Error connecting to the database:", err);
+    throw err;
   }
 }
 

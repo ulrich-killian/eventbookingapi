@@ -4,7 +4,7 @@ A high-concurrency backend for event planning and seat reservations, built with 
 
                       Tech Stack
 
-Layer                                     TechnologyRuntimeNode.
+Layer                                     Technology
 Runtime                                         Node.js    
 Framework                                       Express.js
 Database                                  Postgres SQL (with pg driver)
@@ -64,8 +64,9 @@ npm run dev
 
 # Production
 npm start
+The server starts at http://localhost:3000
 
-The server starts at https://eventbookingapi-w0a3.onrender.com
+Production deployment: https://eventbookingapi-w0a3.onrender.com
 
  API Endpoints
 
