@@ -1,4 +1,4 @@
-                                        Event Booking API
+                                 Event Booking API
 
 A high-concurrency backend for event planning and seat reservations, built with a focus on data integrity and concurrency control.
 
