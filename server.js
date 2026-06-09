@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Swagger docs - serve setup files first, then the UI
 app.use('/api-docs', swaggerUi.serve);
 app.get('/api-docs', swaggerUi.setup(swaggerSpec, {
   explorer: true,
@@ -24,7 +23,6 @@ app.get('/api-docs', swaggerUi.setup(swaggerSpec, {
   ]
 }));
 
-// Also serve the raw spec
 app.get('/api-docs-json', (req, res) => {
   res.json(swaggerSpec);
 });
@@ -48,6 +46,9 @@ app.use((req, res) => {
 
 testConnection();
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`app is running on ${PORT}`);
 });
+
+export { server };
+export default app;
