@@ -1,84 +1,80 @@
-                                 Event Booking API
-
+# Event Booking API
 A high-concurrency backend for event planning and seat reservations, built with a focus on data integrity and concurrency control.
 
-                      Tech Stack
+## Tech Stack
+| Layer | Technology |
+| :--- | :--- |
+| Runtime | Node.js |
+| Framework | Express.js |
+| Database | PostgreSQL (with pg driver) |
+| Auth | JWT (JSON Web Token) + Bcrypt.js |
+| Security | Express-Rate-Limit |
 
-Layer                                     Technology
-Runtime                                         Node.js    
-Framework                                       Express.js
-Database                                  Postgres SQL (with pg driver)
-Auth                                     JWT (JSON Web Token) + Bcrypt.js
-Security                                     Express-Rate-Limit
+## Architecture & Design
+**Service Layer Pattern** — Business logic is decoupled from routes into dedicated services, keeping complex rules (especially around seat management) isolated and testable.
 
+**Concurrency Control** — PostgreSQL Row-Level Locking (FOR UPDATE) is applied during booking and update flows to prevent race conditions and overbooking.
 
-                                     Architecture & Design
+**Atomic Operations** — Seat allocations and cancellations are wrapped in SQL transactions. If any step fails, the system rolls back to maintain a consistent state.
 
-Service Layer Pattern — Business logic is decoupled from routes into dedicated services, keeping complex rules (especially around seat management) isolated and testable.
+**Rate Limiting** — API endpoints are protected against brute-force and DoS attacks.
 
-Concurrency Control — PostgreSQL Row-Level Locking (FOR UPDATE) is applied during booking and update flows to prevent race conditions and overbooking.
+**Input Validation** — Strict enforcement of future-event dating, email format, password strength, and positive seat counts.
 
-Atomic Operations — Seat allocations and cancellations are wrapped in SQL transactions. If any step fails, the system rolls back to maintain a consistent state.
+## Getting Started
 
-Rate Limiting — API endpoints are protected against brute-force and DoS attacks.
-Input Validation — Strict enforcement of future-event dating, email format, password strength, and positive seat counts.
+### Prerequisites
+- Node.js v18+
+- PostgreSQL v14+
 
-Getting Started
-
- Prerequisites
-
-Node.js v18+
-PostgreSQL v14+
-
-Installation
-
+### Installation
+```bash
 # 1. Clone the repository
 git clone https://github.com/ulrich-killian/eventbookingapi
-cd event-booking-api
+cd eventbookingapi
 
 # 2. Install dependencies
 npm install
 
 # 3. Set up environment variables
 cp .env.example .env
+```
 
-Environment Variables
-Create a .env file in the project root:
-
+### Environment Variables
+Create a `.env` file in the project root:
 DATABASE_URL=postgres://user:password@localhost:5432/eventbooking
 JWT_SECRET=your_strong_secret_key_here
-JWT_EXPIRY=7d
+JWT_EXPIRES_IN=7d
 PORT=3000
 NODE_ENV=development
 
-Database Setup
-
-# Run migrations
+### Database Setup
+```bash
 npm run migrate
+```
 
-
-Running the Server
-
+### Running the Server
+```bash
 # Development (with auto-reload)
 npm run dev
 
 # Production
 npm start
+```
+
 The server starts at http://localhost:3000
 
 Production deployment: https://eventbookingapi-w0a3.onrender.com
 
- API Endpoints
+## API Endpoints
 
 ### Authentication
-
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/register` | Public | Register a new user. Body: `{ username, email, password }`. Returns `201` with JWT. |
 | `POST` | `/api/login` | Public | Authenticate user. Body: `{ email, password }`. Returns JWT or `401`. |
 
 ### Events
-
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/events` | Public | List events. Supports date filtering (`?start=&end=`) and pagination (`?limit=10&offset=0`). |
@@ -87,21 +83,16 @@ Production deployment: https://eventbookingapi-w0a3.onrender.com
 | `PUT` | `/api/events/:id` | Owner only | Update event. Cannot reduce seat capacity below current bookings. |
 | `DELETE` | `/api/events/:id` | Owner only | Delete event. Blocked if active bookings exist. |
 
-
 ### Bookings
-
 | Method | Endpoint | Auth | Description |
 | :--- | :--- | :--- | :--- |
 | `POST` | `/api/events/:id/book` | Required | Reserve seats. Body: `{ seats }`. Atomic transaction; returns `409` if seats are unavailable. |
 | `GET` | `/api/bookings` | Required | List the authenticated user's personal bookings. |
 | `DELETE` | `/api/bookings/:id` | Booking Owner | Cancel a booking and restore seats to the event atomically. |
 
+All protected routes require the header: `Authorization: Bearer <token>`
 
-
-All protected routes require the header: Authorization: Bearer <token>
-
-Database Schema
+## Database Schema
 See ![Database Schema](./docs/db.png) for the full entity-relationship diagram.
 
-
-Visit the swagger documentation https://eventbookingapi-w0a3.onrender.com/api-docs
+Visit the swagger documentation: https://eventbookingapi-w0a3.onrender.com/api-docs

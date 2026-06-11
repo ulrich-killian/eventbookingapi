@@ -1,6 +1,5 @@
 import express from 'express';
 import { testConnection } from './src/schema/db.js';
-import { authenticateToken } from './src/middleware/auth.middleware.js';
 import authroute from './src/routes/auth.route.js';
 import eventroute from './src/routes/event.route.js';
 import bookingroute from './src/routes/booking.route.js';
@@ -34,10 +33,6 @@ app.use('/api', bookingroute);
 
 app.get('/', (req, res) => {
   res.send("Event booking api is running");
-});
-
-app.post('/api/bookings', authenticateToken, async (req, res) => {
-  res.json({ message: `Booking created for user ${req.user.id}` });
 });
 
 app.use((req, res) => {
