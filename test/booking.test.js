@@ -1,255 +1,103 @@
 import request from 'supertest';
-import app from '../src/app.js';
+import app, { server } from '../server.js';
+import { pool } from '../src/schema/db.js';
 
-const validToken = 'Bearer valid.token';
-const invalidToken = 'Bearer invalid.token';
-let bookingId;
+describe('Auth Endpoints - /api/register and /api/login', () => {
 
+  afterAll(async () => {
+    await pool.end();
+    server.close();
+  });
 
-describe('Testing Your API With Jest and Supertest', () => {
   beforeEach(async () => {
-    const res = await request(app)
-      .post('/api/v1/booking')
-      .set('Authorization', validToken)
-      .send({
-        // Send your request body in here
-      });
-
-    bookingId = res.body.id;
+    await pool.query('DELETE FROM bookings');
+    await pool.query('DELETE FROM events');
+    await pool.query('DELETE FROM users');
+    await pool.query('ALTER SEQUENCE users_id_seq RESTART WITH 1');
   });
 
   afterEach(async () => {
-    await request(app)
-      .delete(`/api/v1/booking/${bookingId}`)
-      .set('Authorization', validToken);
+    await pool.query('DELETE FROM bookings');
+    await pool.query('DELETE FROM events');
+    await pool.query('DELETE FROM users');
   });
 
-  describe('POST /api/v1/booking - API for creating data', () => {
-    it('should return 201 if token is valid and request is valid', async () => {
+
+  describe('POST /api/register', () => {
+    it('should return 201 with a token on valid registration', async () => {
       const res = await request(app)
-        .post('/api/v1/booking')
-        .set('Authorization', validToken)
-        .send({
-          // Fill in with valid data
-        });
+        .post('/api/register')
+        .send({ username: 'testuser', email: 'test@example.com', password: 'password123' });
 
       expect(res.statusCode).toEqual(201);
-      expect(res.body).toHaveProperty('id');
+      expect(res.body).toHaveProperty('token');
+      expect(res.body).toHaveProperty('user');
     });
 
-    it('should return 400 if request is invalid', async () => {
-      const res = await request(app)
-        .post('/api/v1/booking')
-        .set('Authorization', validToken)
-        .send({
-          // Fill with invalid data
-        });
-
-      expect(res.statusCode).toEqual(400);
-    });
-
-    it('should return 401 if token is not found', async () => {
-      const res = await request(app).post('/api/v1/booking').send({
-        // Fill in with valid data
-      });
-
-      expect(res.statusCode).toEqual(401);
-    });
-
-    it('should return 403 if token is invalid', async () => {
-      const res = await request(app)
-        .post('/api/v1/booking')
-        .set('Authorization', invalidToken)
-        .send({
-          // Fill in with valid data
-        });
-
-      expect(res.statusCode).toEqual(403);
-    });
-
-    it('should return 409 if data already exists', async () => {
+    it('should return 409 if email already exists', async () => {
       await request(app)
-        .post('/api/v1/booking')
-        .set('Authorization', validToken)
-        .send({
-          // Fill in with valid data
-        });
+        .post('/api/register')
+        .send({ username: 'testuser', email: 'test@example.com', password: 'password123' });
 
       const res = await request(app)
-        .post('/api/v1/booking')
-        .set('Authorization', validToken)
-        .send({
-          // Fill with the same data
-        });
+        .post('/api/register')
+        .send({ username: 'testuser2', email: 'test@example.com', password: 'password123' });
 
       expect(res.statusCode).toEqual(409);
     });
-  });
 
-  describe('GET /api/v1/booking - API for get data', () => {
-    it('should return 200 if token is valid', async () => {
+    it('should return 400 if required fields are missing', async () => {
       const res = await request(app)
-        .get('/api/v1/booking')
-        .set('Authorization', validToken);
-
-      expect(res.statusCode).toEqual(200);
-      expect(Array.isArray(res.body)).toBeTruthy();
-    });
-
-    it('should return 401 if token not found', async () => {
-      const res = await request(app).get('/api/v1/booking');
-
-      expect(res.statusCode).toEqual(401);
-    });
-
-    it('should return 403 if token is invalid', async () => {
-      const res = await request(app)
-        .get('/api/v1/booking')
-        .set('Authorization', invalidToken);
-
-      expect(res.statusCode).toEqual(403);
-    });
-  });
-
-  describe('GET /api/v1/booking/:id - API for get data by id', () => {
-    it('should return 200 if token is valid and ID is valid', async () => {
-      const res = await request(app)
-        .get(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken);
-
-      expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('id', authId);
-    });
-
-    it('should return 401 if token is not found', async () => {
-      const res = await request(app).get(`/api/v1/booking/${bookingId}`);
-
-      expect(res.statusCode).toEqual(401);
-    });
-
-    it('should return 403 if token is invalid', async () => {
-      const res = await request(app)
-        .get(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', invalidToken);
-
-      expect(res.statusCode).toEqual(403);
-    });
-
-    it('should return 404 if ID is not found', async () => {
-      const nonExistentId = 'non_existent_id';
-      const res = await request(app)
-        .get(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken);
-
-      expect(res.statusCode).toEqual(404);
-    });
-  });
-
-  describe('PUT /api/v1/booking/:id - API for update data by id', () => {
-    it('should return 200 if token is valid, ID is valid and request is valid', async () => {
-      const res = await request(app)
-        .put(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken)
-        .send({
-          // Fill in with valid data for update
-        });
-
-      expect(res.statusCode).toEqual(200);
-      expect(res.body).toHaveProperty('id', authId);
-    });
-
-    it('should return 400 if token is valid, ID is valid but request is invalid', async () => {
-      const res = await request(app)
-        .put(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken)
-        .send({
-          // Fill with invalid data
-        });
+        .post('/api/register')
+        .send({ email: 'test@example.com' });
 
       expect(res.statusCode).toEqual(400);
     });
-
-    it('should return 401 if token is not found', async () => {
-      const res = await request(app).put(`/api/v1/booking/${bookingId}`).send({
-        // Fill in with valid data
-      });
-
-      expect(res.statusCode).toEqual(401);
-    });
-
-    it('should return 403 if token is invalid', async () => {
-      const res = await request(app)
-        .put(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', invalidToken)
-        .send({
-          // Fill in with valid data
-        });
-
-      expect(res.statusCode).toEqual(403);
-    });
-
-    it('should return 404 if ID is invalid', async () => {
-      const res = await request(app)
-        .put(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken)
-        .send({
-          // Fill in with valid data
-        });
-
-      expect(res.statusCode).toEqual(404);
-    });
-
-    it('should return 409 if data already exists', async () => {
-      // Pertama, buat data yang sama sekali
-      await request(app)
-        .post('/api/v1/booking')
-        .set('Authorization', validToken)
-        .send({
-          // Fill in with valid data
-        });
-
-      // Kemudian coba update dengan data yang sama
-      const res = await request(app)
-        .put(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken)
-        .send({
-          // Fill with the same data
-        });
-
-      expect(res.statusCode).toEqual(409);
-    });
   });
 
-  describe('DELETE /api/v1/booking/:id - API for delete data by id', () => {
-    it('should return 200 if token is valid and ID is valid', async () => {
+
+  describe('POST /api/login', () => {
+    // ✅ seed a real user through HTTP — not raw DB insert
+    beforeEach(async () => {
+      await request(app)
+        .post('/api/register')
+        .send({ username: 'testuser', email: 'test@example.com', password: 'password123' });
+    });
+
+    it('should return 200 with a token on correct credentials', async () => {
       const res = await request(app)
-        .delete(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken);
+        .post('/api/login')
+        .send({ email: 'test@example.com', password: 'password123' });
 
       expect(res.statusCode).toEqual(200);
+      expect(res.body).toHaveProperty('token'); // ← the exact check that catches the JWT bug
     });
 
-    it('should return 401 if token is not found', async () => {
-      const res = await request(app).delete(`/api/v1/booking/${bookingId}`);
+    it('should return 401 on wrong password', async () => {
+      const res = await request(app)
+        .post('/api/login')
+        .send({ email: 'test@example.com', password: 'wrongpassword' });
 
       expect(res.statusCode).toEqual(401);
+      expect(res.body).toHaveProperty('error', 'Invalid credentials');
     });
 
-    it('should return 403 if token is invalid', async () => {
+    it('should return 401 on unknown email', async () => {
       const res = await request(app)
-        .delete(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', invalidToken);
+        .post('/api/login')
+        .send({ email: 'ghost@example.com', password: 'password123' });
 
-      expect(res.statusCode).toEqual(403);
+      expect(res.statusCode).toEqual(401);
+      expect(res.body).toHaveProperty('error', 'Invalid credentials');
     });
 
-    it('should return 404 if ID is invalid', async () => {
-      const nonExistentId = 'non_existent_id';
+    it('should return 400 if required fields are missing', async () => {
       const res = await request(app)
-        .delete(`/api/v1/booking/${bookingId}`)
-        .set('Authorization', validToken);
+        .post('/api/login')
+        .send({ email: 'test@example.com' }); // missing password
 
-      expect(res.statusCode).toEqual(404);
+      expect(res.statusCode).toEqual(400);
     });
   });
+
 });
