@@ -41,6 +41,7 @@ cp .env.example .env
 ```
 
 ### Environment Variables
+
 Create a `.env` file in the project root:
 DATABASE_URL=postgres://user:password@localhost:5432/eventbooking
 JWT_SECRET=your_strong_secret_key_here
